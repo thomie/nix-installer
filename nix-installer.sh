@@ -68,22 +68,6 @@ main() {
         fi
     fi
 
-    # check if we have to use /dev/tty to prompt the user
-    local need_tty=yes
-    for arg in "$@"; do
-        case "$arg" in
-            --no-confirm)
-                need_tty=no
-                ;;
-            *)
-                continue
-                ;;
-        esac
-    done
-    if [ "${NIX_INSTALLER_NO_CONFIRM-}" ]; then
-        need_tty=no
-    fi
-
     if $_ansi_escapes_are_valid; then
         printf "\33[1minfo:\33[0m downloading installer \33[4m%s\33[0m\n" "$_url" 1>&2
     else
@@ -99,19 +83,7 @@ main() {
         exit 1
     fi
 
-    if [ "$need_tty" = "yes" ] && [ ! -t 0 ]; then
-        # The installer is going to want to ask for confirmation by
-        # reading stdin.  This script was piped into `sh` though and
-        # doesn't have stdin to pass to its children. Instead we're going
-        # to explicitly connect /dev/tty to the installer's stdin.
-        if [ ! -t 1 ]; then
-            err "Unable to run interactively. Run with --no-confirm to accept defaults, --help for additional options"
-        fi
-
-        ignore "$_file" "$@" < /dev/tty
-    else
-        ignore "$_file" "$@"
-    fi
+    ignore "$_file" "$@"
 
     local _retval=$?
 

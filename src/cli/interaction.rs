@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::io::{stdin, stdout, BufRead, Write};
+use std::fs::File;
+use std::io::{stdout, BufRead, BufReader, Write};
 
 use eyre::{eyre, WrapErr};
 use owo_colors::OwoColorize;
@@ -82,9 +83,11 @@ pub(crate) async fn prompt(
 }
 
 pub(crate) fn read_line() -> eyre::Result<String> {
-    let stdin = stdin();
-    let stdin = stdin.lock();
-    let mut lines = stdin.lines();
+    // If this program is called from a script that was piped into `sh` then we don't have access
+    // to stdin. Instead we're going to explicitly read from /dev/tty.
+    let tty = File::open("/dev/tty").context("failed to open /dev/tty")?;
+    let tty = BufReader::new(tty);
+    let mut lines = tty.lines();
     let lines = lines.next().transpose()?;
     match lines {
         None => Err(eyre!("no lines found from stdin")),
